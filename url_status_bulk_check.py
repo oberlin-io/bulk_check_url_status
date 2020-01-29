@@ -1,41 +1,41 @@
+'''
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+                                                                      888
+                                                            .d8888b.  888888b.
+                                                           d88'  '88b 888  '88b
+                                                           888    888 888   888
+joberlin@acr.org                                           Y88.  .88Y 888  d88P
+oberlijhn@gmail.com                                         'Y8888Y'  888888P'
+
+
+Takes Pandas dataframe, grabs the column named 'url', dedupes, gets URL status
+code, joins codes to the dataframe, and returns the updated dataframe.
+''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+'''
+
+import pandas as pd
 import requests as req
-from datetime import datetime
-import time
+import sys
 
-# Paste links column within t
-t = """www.example.com
-www.example.com/anotherLink"""
-
-# Get links into a list
-links = t.split("\n")
-
-# Preview links list
-for i in links[:5]:
-    print(i)
-
-sec = 10
-print("Paused for {} seconds.".format(str(sec)))
-time.sleep(sec)
-
-# Get link status code, build CSV for download
-csv = ""
-for link in links:
-    try:
-        got = req.get(link)
-        csv += link + "," + str(got.status_code) + "\n"
-    except:
-        csv += link + "," + "JO's script error" + "\n"
-
-# Preview CSV output
-preview = csv.split("\n")
-for i in preview[:5]:
-    print(i)
-
-print("Paused for {} seconds.".format(str(sec)))
-time.sleep(sec)
-
-# Write out to CSV file (saves to machine)
-now = datetime.now()
-timestamp = now.strftime("%Y-%m-%d_%H%M")
-with open("link_status_" + timestamp + ".csv", "w") as f:
-    f.write(csv)
+def url_status(df):
+    requests.packages.urllib3.disable_warnings()
+        # Warning due to get() trying to verify certs.
+    urls = df.url.drop_duplicates().tolist()
+    #
+    statuses = list()
+    for url in urls:
+        try:
+            response = req.get(url, verify=False)
+                # If cert verify=True, SSL error fo rmy context,
+                # but safer to try True.
+            statuses.append(response.status_code)
+        except:
+            statuses.append(sys.exc_info()[1])
+        #
+    if len(urls) == len(statuses):
+        url_status = pd.DataFrame({'url': urls, 'url_status': statuses})
+        df = pd.merge(df, url_status, how='left', left_on='url', right_on='url')
+        return df
+    else:
+        print('Error: Number of statuses different than URLs.')  
