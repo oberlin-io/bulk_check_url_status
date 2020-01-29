@@ -21,7 +21,7 @@ import sys
 def url_status(df):
     requests.packages.urllib3.disable_warnings()
         # Warning due to get() trying to verify certs.
-    urls = df.url.drop_duplicates().tolist()
+    urls = df.url.unique().tolist()
     #
     statuses = list()
     for url in urls:
